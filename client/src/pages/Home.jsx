@@ -11,7 +11,7 @@ const CATEGORIES = [
   'Cloud & Big Data', 'Gaming', 'Space Tech', 'Green Tech', 'Emerging Tech', 'Coding'
 ];
 
-import { Search } from 'lucide-react';
+// Search already imported above
 import { useDebounce } from '../hooks/useDebounce'; // We need to create this or use useEffect
 
 // Simplified approach: Use useEffect for debounce inside component or just local state with timer if easier.
