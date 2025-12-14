@@ -65,10 +65,10 @@ const Home = () => {
                 <div className="flex items-center gap-4">
                     {user ? (
                         <div className="flex items-center gap-4">
-                            <span className="flex items-center gap-2 text-sm text-gray-400">
+                            <Link to="/dashboard" className="flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-white">
                                 <User className="h-4 w-4" />
                                 {user.username}
-                            </span>
+                            </Link>
                             <button 
                                 onClick={logout}
                                 className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:bg-white/5 hover:text-white"

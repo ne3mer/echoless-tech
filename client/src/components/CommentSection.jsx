@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { Loader2, Send, User, MessageCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import CommentItem from './CommentItem';
 
 const CommentSection = ({ articleId }) => {
   const { user } = useAuth();
@@ -78,22 +78,9 @@ const CommentSection = ({ articleId }) => {
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : comments?.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {comments.map((comment) => (
-            <div key={comment._id} className="flex gap-4 rounded-xl bg-white/5 p-4 transition-colors hover:bg-white/10">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-gray-700 to-gray-900 drop-shadow-md">
-                 <User className="h-5 w-5 text-gray-400" />
-              </div>
-              <div className="flex-1">
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="font-semibold text-gray-200">{comment.user?.username || 'Anonymous'}</span>
-                  <span className="text-xs text-gray-500">
-                    {format(new Date(comment.createdAt), 'MMM d, p')}
-                  </span>
-                </div>
-                <p className="text-sm leading-relaxed text-gray-300">{comment.content}</p>
-              </div>
-            </div>
+            <CommentItem key={comment._id} comment={comment} articleId={articleId} />
           ))}
         </div>
       ) : (
