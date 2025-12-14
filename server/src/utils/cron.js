@@ -14,6 +14,9 @@ export const initCronJobs = () => {
     await scraperService.scrapeAll();
   });
   
-  // Optional: Run immediately on startup for dev/demo purposes?
-  // scraperService.scrapeAll(); 
+  // Run immediately on startup in development to populate data
+  if (process.env.NODE_ENV !== 'production') {
+    logger.info('🚀 Dev Mode: Running immediate scrape...');
+    scraperService.scrapeAll(); 
+  }
 };
