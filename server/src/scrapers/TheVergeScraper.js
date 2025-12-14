@@ -1,5 +1,4 @@
-import axios from 'axios';
-import * as cheerio from 'cheerio';
+import Parser from 'rss-parser';
 import BaseScraper from './BaseScraper.js';
 import logger from '../utils/logger.js';
 import { categorizeArticle } from '../utils/categorizer.js';
@@ -7,63 +6,38 @@ import { categorizeArticle } from '../utils/categorizer.js';
 class TheVergeScraper extends BaseScraper {
   constructor() {
     super('The Verge');
-    this.baseUrl = 'https://www.theverge.com/tech';
+    this.rssUrl = 'https://www.theverge.com/rss/index.xml';
+    this.parser = new Parser();
   }
 
   async scrape() {
-    logger.info(`[${this.name}] Starting scrape...`);
+    logger.info(`[${this.name}] Starting RSS fetch...`);
     try {
-      const { data } = await axios.get(this.baseUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; EcholessBot/1.0;)'
-        }
-      });
-
-      const $ = cheerio.load(data);
-      const articles = [];
-
-      // The Verge structure changes, but generally article blocks are identifiable
-      // Looking for standard 'h2 a' patterns in their feed
-      $('h2 a').each((i, el) => {
-        if (i >= 15) return false; // Limit
-
-        const title = $(el).text().trim();
-        const rawUrl = $(el).attr('href');
+      const feed = await this.parser.parseURL(this.rssUrl);
+      
+      const articles = feed.items.map(item => {
+        const content = item.contentSnippet || '';
         
-        if (!title || !rawUrl) return;
-
-        const fullUrl = this.normalizeUrl(rawUrl, 'https://www.theverge.com');
+        // The Verge RSS is pretty standard
         
-        // Use parent finding to locate image and time if possible
-        const parentBlock = $(el).closest('div, article');
-        /* 
-           The Verge uses complex picture tags. 
-           We attempt to find an img `src` or `srcset`.
-        */
-        const img = parentBlock.find('img').first();
-        const imageUrl = img.attr('src');
-        
-        const timeEl = parentBlock.find('time');
-        const pubDate = timeEl.attr('datetime') || new Date();
-
-        articles.push({
-          title,
-          url: fullUrl,
+        return {
+          title: item.title,
+          url: this.normalizeUrl(item.link),
           source: this.name,
-          content: title, // Summary is hard to extract reliably from titles-only feed
-          summary: title,
-          imageUrl: imageUrl || null,
-          author: 'The Verge Staff',
-          publishedAt: new Date(pubDate),
-          categories: categorizeArticle(title)
-        });
+          content: content,
+          summary: content,
+          imageUrl: null, // Reliably getting high-res images from RSS is tough without parsing the HTML content field
+          author: item.creator || 'The Verge',
+          publishedAt: new Date(item.pubDate),
+          categories: categorizeArticle(item.title)
+        };
       });
 
-      logger.info(`[${this.name}] Found ${articles.length} articles.`);
+      logger.info(`[${this.name}] Found ${articles.length} articles via RSS.`);
       return articles;
 
     } catch (error) {
-      logger.error(`[${this.name}] Scraping failed: ${error.message}`);
+      logger.error(`[${this.name}] RSS Scraping failed: ${error.message}`);
       return [];
     }
   }
