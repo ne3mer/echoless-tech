@@ -224,7 +224,7 @@ const Home = () => {
             </div>
         )}
       </div>
-// removed extra div
+    </div>
   );
 };
 
