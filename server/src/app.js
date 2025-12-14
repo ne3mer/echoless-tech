@@ -18,11 +18,18 @@ const app = express();
 // Sets various HTTP headers to secure the app
 app.use(helmet());
 
-// 2. CORS (Cross-Origin Resource Sharing)
-// Allows the frontend to communicate with the backend
 app.use(cors({
-  origin: process.env.CLIENT_URL || '*', // Restrict this in production
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    // Allow any localhost
+    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+      return callback(null, true);
+    }
+    const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+    return callback(new Error(msg), false);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
 
