@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import ArticleCard from '../components/ArticleCard';
+import HeroCarousel from '../components/HeroCarousel'; // Added import
 import { Loader2, RefreshCw, LogIn, UserPlus, LogOut, User, Search } from 'lucide-react'; // Added Search
 import { useAuth } from '../context/AuthContext';
 
@@ -148,16 +149,21 @@ const Home = () => {
                 </div>
             </div>
         </nav>
+        <div className="px-4 py-8 md:px-8">
+        {/* Creative Hero Section */}
+        {articles && articles.length > 0 && <HeroCarousel articles={articles} />}
 
-      <div className="px-4 py-8 md:px-8">
-        <header className="mx-auto mb-8 max-w-7xl text-center">
-          <h1 className="mb-2 text-4xl font-extrabold text-white sm:text-6xl">
-            Tech News <span className="text-gray-600">Reimagined</span>
-          </h1>
-          <p className="text-lg text-gray-400">
-            Real-time feed from the best sources in tech.
-          </p>
-        </header>
+        {/* Fallback Header (only if no carousel shown, e.g. loading or no images) */}
+        {(!articles || articles.length === 0) && (
+            <header className="mx-auto mb-8 max-w-7xl text-center">
+                <h1 className="mb-2 text-4xl font-extrabold text-white sm:text-6xl">
+                    Tech News <span className="text-gray-600">Reimagined</span>
+                </h1>
+                <p className="text-lg text-gray-400">
+                    Real-time feed from the best sources in tech.
+                </p>
+            </header>
+        )}
 
         {/* Category Filters */}
         <div className="mx-auto mb-10 flex max-w-7xl gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -218,7 +224,7 @@ const Home = () => {
             </div>
         )}
       </div>
-    </div>
+// removed extra div
   );
 };
 
