@@ -1,16 +1,12 @@
-import React from 'react';
-import { ExternalLink, MessageSquare, Calendar, Tag } from 'lucide-react';
+import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
+import { Calendar, Tag, MessageSquare, ExternalLink } from 'lucide-react';
 
 const ArticleCard = ({ article }) => {
   const { title, summary, source, publishedAt, categories, url, author } = article;
   
-  // Format date loosely
-  const date = new Date(publishedAt).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  // Format date: "Dec 14, 2025 • 2:30 PM"
+  const date = publishedAt ? format(new Date(publishedAt), "MMM d, yyyy • h:mm a") : 'Just now';
 
   return (
     <article className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-white/10 bg-surface/50 p-6 backdrop-blur-md transition-all hover:border-primary/50 hover:bg-surface/80 hover:shadow-lg hover:shadow-primary/5">
@@ -51,10 +47,13 @@ const ArticleCard = ({ article }) => {
         </div>
         
         <div className="flex items-center gap-4">
-            <button className="z-10 flex items-center gap-1.5 text-xs font-medium text-gray-400 transition-colors hover:text-white">
+            <Link 
+                to={`/articles/${article._id}`}
+                className="z-10 flex items-center gap-1.5 text-xs font-medium text-gray-400 transition-colors hover:text-white"
+            >
                 <MessageSquare className="h-3.5 w-3.5" />
                 Discuss
-            </button>
+            </Link>
             <a 
                 href={url} 
                 target="_blank" 

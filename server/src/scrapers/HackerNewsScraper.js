@@ -1,6 +1,7 @@
 import axios from 'axios';
 import BaseScraper from './BaseScraper.js';
 import logger from '../utils/logger.js';
+import { categorizeArticle } from '../utils/categorizer.js';
 
 class HackerNewsScraper extends BaseScraper {
   constructor() {
@@ -39,7 +40,7 @@ class HackerNewsScraper extends BaseScraper {
           imageUrl: null, // Frontend can show a placeholder or we can scrape og:image later
           author: story.by,
           publishedAt: new Date(story.time * 1000),
-          categories: ['Tech', 'Discussion', 'Programming'],
+          categories: categorizeArticle(story.title),
           originalId: String(story.id)
         });
       }

@@ -6,17 +6,27 @@ import ArticleCard from '../components/ArticleCard';
 import { Loader2, RefreshCw, LogIn, UserPlus, LogOut, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const fetchArticles = async () => {
-    // Dynamically fetch based on simple filters if needed, for now just get latest
-  const { data } = await api.get('/articles?limit=30');
+const CATEGORIES = [
+  'All', 'AI', 'Cybersecurity', 'Consumer Electronics', 'Software & Apps', 
+  'Cloud & Big Data', 'Gaming', 'Space Tech', 'Green Tech', 'Emerging Tech', 'Coding'
+];
+
+const fetchArticles = async (category) => {
+  const params = { limit: 30 };
+  if (category && category !== 'All') {
+    params.category = category;
+  }
+  const { data } = await api.get('/articles', { params });
   return data.articles;
 };
 
 const Home = () => {
   const { user, logout } = useAuth();
+  const [selectedCategory, setSelectedCategory] = React.useState('All');
+  
   const { data: articles, isLoading, isError, refetch } = useQuery({
-    queryKey: ['articles'],
-    queryFn: fetchArticles,
+    queryKey: ['articles', selectedCategory],
+    queryFn: () => fetchArticles(selectedCategory),
   });
 
   if (isLoading) {
@@ -87,7 +97,7 @@ const Home = () => {
         </nav>
 
       <div className="px-4 py-8 md:px-8">
-        <header className="mx-auto mb-12 max-w-7xl text-center">
+        <header className="mx-auto mb-8 max-w-7xl text-center">
           <h1 className="mb-2 text-4xl font-extrabold text-white sm:text-6xl">
             Tech News <span className="text-gray-600">Reimagined</span>
           </h1>
@@ -95,11 +105,34 @@ const Home = () => {
             Real-time feed from the best sources in tech.
           </p>
         </header>
+
+        {/* Category Filters */}
+        <div className="mx-auto mb-10 flex max-w-7xl gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {CATEGORIES.map((cat) => (
+                <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+                        selectedCategory === cat 
+                        ? 'bg-primary text-white shadow-lg shadow-primary/25' 
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                    }`}
+                >
+                    {cat}
+                </button>
+            ))}
+        </div>
         
         <main className="mx-auto grid max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article) => (
-            <ArticleCard key={article._id} article={article} />
-          ))}
+          {articles.length > 0 ? (
+            articles.map((article) => (
+                <ArticleCard key={article._id} article={article} />
+            ))
+          ) : (
+             <div className="col-span-full py-20 text-center text-gray-500">
+                <p>No articles found for "{selectedCategory}".</p>
+             </div>
+          )}
         </main>
       </div>
     </div>

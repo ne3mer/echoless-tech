@@ -2,6 +2,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import BaseScraper from './BaseScraper.js';
 import logger from '../utils/logger.js';
+import { categorizeArticle } from '../utils/categorizer.js';
 
 class TechCrunchScraper extends BaseScraper {
   constructor() {
@@ -49,7 +50,7 @@ class TechCrunchScraper extends BaseScraper {
             imageUrl: imageUrl || null,
             author: author || 'TechCrunch Staff',
             publishedAt: dateStr ? new Date(dateStr) : new Date(),
-            categories: ['Tech', 'Startup']
+            categories: categorizeArticle(title + ' ' + description)
           });
         }
       });

@@ -1,13 +1,16 @@
 import Article from '../models/Article.js';
 import TechCrunchScraper from '../scrapers/TechCrunchScraper.js';
 import HackerNewsScraper from '../scrapers/HackerNewsScraper.js';
+import IgnScraper from '../scrapers/IgnScraper.js';
 import logger from '../utils/logger.js';
+import { categorizeArticle } from '../utils/categorizer.js';
 
 class ScraperService {
   constructor() {
     this.scrapers = [
       new TechCrunchScraper(),
       new HackerNewsScraper(),
+      new IgnScraper(),
     ];
   }
 
@@ -21,46 +24,50 @@ class ScraperService {
       this.scrapers.map(scraper => scraper.scrape())
     );
 
-    let totalNewArticles = 0;
+    let totalNew = 0;
 
     for (const result of results) {
       if (result.status === 'fulfilled') {
-        const articles = result.value;
-        const savedCount = await this.processArticles(articles);
-        totalNewArticles += savedCount;
+        const savedCount = await this.saveArticles(result.value);
+        totalNew += savedCount;
+      } else {
+        logger.error(`Scraper failed: ${result.reason}`);
       }
     }
 
-    logger.info(`✅ Global scrape job finished. Saved ${totalNewArticles} new articles.`);
+    logger.info(`✅ Global scrape job finished. Saved ${totalNew} new articles.`);
   }
 
   /**
-   * Process a batch of articles: Deduplicate and Save
+   * Process a batch of articles: Deduplicate, Categorize and Save
    * @param {Array} articles 
    * @returns {Promise<number>} count of saved articles
    */
-  async processArticles(articles) {
+  async saveArticles(articles) {
     let savedCount = 0;
 
     for (const articleData of articles) {
-      // 1. Check exact URL Match
-      const existingUrl = await Article.findOne({ url: articleData.url });
-      if (existingUrl) continue;
 
-      // 2. Check Fuzzy Title Match (Simple implementation for now)
-      // Prevent saving "iPhone 15 released" if "Apple releases iPhone 15" exists from same day
-      // For now, we rely on exact URL or very close title matches to be safe.
-      const existingTitle = await Article.findOne({ 
-        title: articleData.title 
-      });
-      if (existingTitle) continue;
+       // 1. Check Deduplication
+       const existingUrl = await Article.findOne({ url: articleData.url });
+       if (existingUrl) continue;
+ 
+       // 2. Auto-Categorize (Centralized Logic)
+       const textToAnalyze = `${articleData.title} ${articleData.summary || ''} ${articleData.description || ''}`;
+       const categories = categorizeArticle(textToAnalyze);
 
       // 3. Save new Unique Article
       try {
-        await Article.create(articleData);
+        await Article.create({
+            ...articleData,
+            categories: categories
+        });
         savedCount++;
       } catch (err) {
-        logger.error(`Failed to save article "${articleData.title}": ${err.message}`);
+        // Ignore duplicate key errors silently (as we checked above, but race conditions exist)
+        if (err.code !== 11000) {
+             logger.error(`Failed to save article "${articleData.title}": ${err.message}`);
+        }
       }
     }
 

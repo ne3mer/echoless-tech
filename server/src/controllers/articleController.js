@@ -1,4 +1,6 @@
 import Article from '../models/Article.js';
+import logger from '../utils/logger.js';
+import { categorizeArticle } from '../utils/categorizer.js';
 
 /**
  * @desc    Get all articles with pagination, filtering, and search
@@ -75,6 +77,32 @@ export const getArticleById = async (req, res, next) => {
         res.status(404);
         return res.json({ error: 'Article not found' });
     }
+    next(error);
+  }
+};
+
+/**
+ * @desc    Re-run categorization on all articles
+ * @route   POST /api/v1/articles/recategorize
+ * @access  Private (Admin)
+ */
+export const recategorizeAll = async (req, res, next) => {
+  try {
+    const articles = await Article.find({});
+    let updatedCount = 0;
+
+    for (const article of articles) {
+      const text = `${article.title} ${article.summary || ''}`;
+      const newCategories = categorizeArticle(text);
+      
+      article.categories = newCategories;
+      await article.save();
+      updatedCount++;
+    }
+
+    logger.info(`Re-categorized ${updatedCount} articles.`);
+    res.json({ message: `Successfully re-categorized ${updatedCount} articles.` });
+  } catch (error) {
     next(error);
   }
 };

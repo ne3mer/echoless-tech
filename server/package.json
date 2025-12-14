@@ -14,5 +14,22 @@
   "description": "",
   "devDependencies": {
     "nodemon": "^3.1.11"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.3",
+    "cheerio": "^1.1.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.0.1",
+    "morgan": "^1.10.1",
+    "node-cron": "^4.2.1",
+    "puppeteer": "^24.33.0",
+    "slugify": "^1.6.6",
+    "winston": "^3.19.0",
+    "zod": "^4.1.13"
   }
 }
