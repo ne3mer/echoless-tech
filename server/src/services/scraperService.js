@@ -2,6 +2,8 @@ import Article from '../models/Article.js';
 import TechCrunchScraper from '../scrapers/TechCrunchScraper.js';
 import HackerNewsScraper from '../scrapers/HackerNewsScraper.js';
 import IgnScraper from '../scrapers/IgnScraper.js';
+import TheVergeScraper from '../scrapers/TheVergeScraper.js';
+import DevToScraper from '../scrapers/DevToScraper.js';
 import logger from '../utils/logger.js';
 import { categorizeArticle } from '../utils/categorizer.js';
 
@@ -11,6 +13,8 @@ class ScraperService {
       new TechCrunchScraper(),
       new HackerNewsScraper(),
       new IgnScraper(),
+      new TheVergeScraper(),
+      new DevToScraper()
     ];
   }
 
