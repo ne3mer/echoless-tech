@@ -46,9 +46,10 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Setup API Routes (Placeholder for now)
-// import apiRoutes from './routes/index.js';
-// app.use('/api/v1', apiRoutes);
+// Setup API Routes
+import authRoutes from './routes/authRoutes.js';
+
+app.use('/api/v1/auth', authRoutes);
 
 // =========================================
 // Error Handling
