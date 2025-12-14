@@ -1,12 +1,13 @@
 import Article from '../models/Article.js';
 import TechCrunchScraper from '../scrapers/TechCrunchScraper.js';
+import HackerNewsScraper from '../scrapers/HackerNewsScraper.js';
 import logger from '../utils/logger.js';
 
 class ScraperService {
   constructor() {
     this.scrapers = [
       new TechCrunchScraper(),
-      // Add other scrapers here later (TheVerge, HackerNews, etc.)
+      new HackerNewsScraper(),
     ];
   }
 
