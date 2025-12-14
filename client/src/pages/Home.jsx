@@ -13,8 +13,11 @@ const CATEGORIES = [
 
 // Search already imported above
 
-const fetchArticles = async (category, search) => {
-  const params = { limit: 30 };
+// Need extra icons for pagination
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+const fetchArticles = async (category, search, page = 1) => {
+  const params = { limit: 12, page }; // Reduced limit for better pagination UX
   if (category && category !== 'All') {
     params.category = category;
   }
@@ -22,32 +25,36 @@ const fetchArticles = async (category, search) => {
     params.search = search;
   }
   const { data } = await api.get('/articles', { params });
-  return data.articles;
+  return data; // Return full response { articles, meta }
 };
 
 const Home = () => {
   const { user, logout } = useAuth();
   const [selectedCategory, setSelectedCategory] = React.useState('All');
   const [searchTerm, setSearchTerm] = React.useState('');
-  // Simple debounce logic
+  const [page, setPage] = React.useState(1);
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
+      setPage(1); // Reset page on new search
     }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm]);
   
-  const { data: articles, isLoading, isError, refetch } = useQuery({
-    queryKey: ['articles', selectedCategory, debouncedSearch],
-    queryFn: () => fetchArticles(selectedCategory, debouncedSearch),
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['articles', selectedCategory, debouncedSearch, page],
+    queryFn: () => fetchArticles(selectedCategory, debouncedSearch, page),
     refetchInterval: 5 * 60 * 1000, 
     refetchOnWindowFocus: true,
-    keepPreviousData: true // Nice UX
+    keepPreviousData: true 
   });
 
-  if (isLoading && !articles) { // Show loading only on first load
+  const articles = data?.articles || [];
+  const meta = data?.meta || {};
+
+  if (isLoading && !data) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -159,7 +166,8 @@ const Home = () => {
                     key={cat}
                     onClick={() => {
                         setSelectedCategory(cat);
-                        setSearchTerm(''); // Clear search when changing category for clarity
+                        setSearchTerm(''); 
+                        setPage(1); // Reset page on category change
                     }}
                     className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
                         selectedCategory === cat 
@@ -172,7 +180,8 @@ const Home = () => {
             ))}
         </div>
         
-        <main className="mx-auto grid max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Article Grid */}
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {articles?.length > 0 ? (
             articles.map((article) => (
                 <ArticleCard key={article._id} article={article} />
@@ -182,7 +191,32 @@ const Home = () => {
                 <p>No articles found for "{debouncedSearch || selectedCategory}".</p>
              </div>
           )}
-        </main>
+        </div>
+
+        {/* Pagination Controls */}
+        {meta.pages > 1 && (
+            <div className="mt-12 flex justify-center gap-4">
+                <button 
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <ChevronLeft className="h-4 w-4" /> Previous
+                </button>
+                
+                <span className="flex items-center px-2 text-sm font-medium text-gray-400">
+                    Page {page} of {meta.pages}
+                </span>
+
+                <button 
+                    onClick={() => setPage(p => Math.min(meta.pages, p + 1))}
+                    disabled={page === meta.pages}
+                    className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Next <ChevronRight className="h-4 w-4" />
+                </button>
+            </div>
+        )}
       </div>
     </div>
   );
