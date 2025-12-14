@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import app from './app.js';
 import { connectDB } from './config/db.js';
+import { initCronJobs } from './utils/cron.js';
 import logger from './utils/logger.js';
 
 // Load Environment Variables
@@ -27,6 +28,9 @@ const startServer = async () => {
       🛠  Environment: ${process.env.NODE_ENV || 'development'}
       ################################################
       `);
+      
+      // Initialize Cron Jobs after server starts
+      initCronJobs();
     });
 
     // Handle Unhandled Promise Rejections
