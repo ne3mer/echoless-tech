@@ -17,21 +17,27 @@ const CATEGORIES = [
 // Need extra icons for pagination
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const fetchArticles = async (category, search, page = 1) => {
-  const params = { limit: 12, page }; // Reduced limit for better pagination UX
+const SOURCES = ['All Sources', 'TechCrunch', 'Hacker News', 'IGN', 'The Verge', 'Dev.to'];
+
+const fetchArticles = async (category, search, source, page = 1) => {
+  const params = { limit: 12, page }; 
   if (category && category !== 'All') {
     params.category = category;
+  }
+  if (source && source !== 'All Sources') {
+    params.source = source;
   }
   if (search) {
     params.search = search;
   }
   const { data } = await api.get('/articles', { params });
-  return data; // Return full response { articles, meta }
+  return data; 
 };
 
 const Home = () => {
   const { user, logout } = useAuth();
   const [selectedCategory, setSelectedCategory] = React.useState('All');
+  const [selectedSource, setSelectedSource] = React.useState('All Sources'); // New State
   const [searchTerm, setSearchTerm] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
@@ -39,14 +45,14 @@ const Home = () => {
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
-      setPage(1); // Reset page on new search
+      setPage(1); 
     }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm]);
   
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['articles', selectedCategory, debouncedSearch, page],
-    queryFn: () => fetchArticles(selectedCategory, debouncedSearch, page),
+    queryKey: ['articles', selectedCategory, selectedSource, debouncedSearch, page], // Added selectedSource
+    queryFn: () => fetchArticles(selectedCategory, debouncedSearch, selectedSource, page),
     refetchInterval: 5 * 60 * 1000, 
     refetchOnWindowFocus: true,
     keepPreviousData: true 
@@ -165,25 +171,52 @@ const Home = () => {
             </header>
         )}
 
-        {/* Category Filters */}
-        <div className="mx-auto mb-10 flex max-w-7xl gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {CATEGORIES.map((cat) => (
-                <button
-                    key={cat}
-                    onClick={() => {
-                        setSelectedCategory(cat);
-                        setSearchTerm(''); 
-                        setPage(1); // Reset page on category change
+        {/* Filters Container */}
+        <div className="mx-auto mb-10 flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Category Filters */}
+            <div className="flex flex-1 gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {CATEGORIES.map((cat) => (
+                    <button
+                        key={cat}
+                        onClick={() => {
+                            setSelectedCategory(cat);
+                            setSearchTerm(''); 
+                            setPage(1); 
+                        }}
+                        className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+                            selectedCategory === cat 
+                            ? 'bg-primary text-white shadow-lg shadow-primary/25' 
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                        }`}
+                    >
+                        {cat}
+                    </button>
+                ))}
+            </div>
+
+            {/* Source Filter Dropdown */}
+            <div className="relative shrink-0">
+                <select
+                    value={selectedSource}
+                    onChange={(e) => {
+                        setSelectedSource(e.target.value);
+                        setPage(1);
                     }}
-                    className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
-                        selectedCategory === cat 
-                        ? 'bg-primary text-white shadow-lg shadow-primary/25' 
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
-                    }`}
+                    className="appearance-none rounded-lg border border-white/10 bg-white/5 py-2 pl-4 pr-10 text-sm font-medium text-gray-300 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                    {cat}
-                </button>
-            ))}
+                    {SOURCES.map(source => (
+                        <option key={source} value={source} className="bg-surface text-gray-300">
+                            {source}
+                        </option>
+                    ))}
+                </select>
+                 {/* Custom Arrow Icon */}
+                 <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+            </div>
         </div>
         
         {/* Article Grid */}
