@@ -12,10 +12,6 @@ const CATEGORIES = [
 ];
 
 // Search already imported above
-import { useDebounce } from '../hooks/useDebounce'; // We need to create this or use useEffect
-
-// Simplified approach: Use useEffect for debounce inside component or just local state with timer if easier.
-// Let's stick to standard effective ways.
 
 const fetchArticles = async (category, search) => {
   const params = { limit: 30 };

@@ -22,10 +22,27 @@ class ScraperService {
    * Run all scrapers in parallel
    */
   async scrapeAll() {
-    logger.info('🚀 Starting global scrape job...');
+    return this.scrapeSources(); // Delegate to scrapeSources
+  }
+
+  /**
+   * Run specific scrapers by name
+   * @param {string[]} [sourceNames] - Array of source names to scrape. If empty, scrapes all.
+   */
+  async scrapeSources(sourceNames = []) {
+    const targets = sourceNames.length > 0 
+        ? this.scrapers.filter(s => sourceNames.includes(s.name))
+        : this.scrapers;
+
+    if (targets.length === 0) {
+        logger.warn(`No scrapers found matching: ${sourceNames.join(', ')}`);
+        return;
+    }
+
+    logger.info(`🚀 Starting scrape job for: ${targets.map(s => s.name).join(', ')}...`);
     
     const results = await Promise.allSettled(
-      this.scrapers.map(scraper => scraper.scrape())
+      targets.map(scraper => scraper.scrape())
     );
 
     let totalNew = 0;
@@ -39,7 +56,7 @@ class ScraperService {
       }
     }
 
-    logger.info(`✅ Global scrape job finished. Saved ${totalNew} new articles.`);
+    logger.info(`✅ Scrape job finished. Saved ${totalNew} new articles.`);
   }
 
   /**
