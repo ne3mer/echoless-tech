@@ -49,10 +49,10 @@ const ArticleCard = ({ article }) => {
             </div>
 
             <h3 className={`mb-3 text-xl font-bold leading-tight transition-colors ${hasImage ? 'text-white group-hover:text-primary' : 'text-white group-hover:text-primary'}`}>
-              <a href={url} target="_blank" rel="noopener noreferrer" className="focus:outline-none">
+              <Link to={`/articles/${article._id}`} className="focus:outline-none">
                 {title}
                 <span className="absolute inset-0" aria-hidden="true" />
-              </a>
+              </Link>
             </h3>
 
             <p className={`mb-4 line-clamp-3 text-sm leading-relaxed ${hasImage ? 'text-gray-300' : 'text-gray-400'}`}>

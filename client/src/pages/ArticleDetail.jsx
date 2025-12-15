@@ -12,10 +12,58 @@ const fetchArticle = async (id) => {
   return data;
 };
 
-// Fetch random related articles (for now just latest 3 excluding current)
-const fetchRelatedArticles = async (currentId) => {
-    const { data } = await api.get('/articles', { params: { limit: 4 } });
-    return data.articles.filter(a => a._id !== currentId).slice(0, 3);
+// Helper to extract a main keyword (longest word > 4 chars)
+const extractKeyword = (title) => {
+    if (!title) return '';
+    const words = title.replace(/[^\w\s]/gi, '').split(/\s+/);
+    // Filter out common stop words if needed, but length check usually suffices for a quick heuristic
+    const significant = words.filter(w => w.length > 4 && !['about', 'their', 'which', 'would', 'could', 'these', 'those'].includes(w.toLowerCase()));
+    return significant.sort((a, b) => b.length - a.length)[0] || '';
+}
+
+// Fetch relevant articles (Hybrid: Keyword Search + Category)
+const fetchRelatedArticles = async (currentId, article) => {
+    if (!article) return [];
+    
+    const limit = 20;
+    const keyword = extractKeyword(article.title);
+    
+    try {
+        // 1. Parallel fetch: Search by Keyword & Search by Category
+        const [searchRes, categoryRes] = await Promise.all([
+            keyword ? api.get('/articles', { params: { search: keyword, limit } }) : { data: { articles: [] } },
+            article.categories?.[0] ? api.get('/articles', { params: { category: article.categories[0], limit } }) : { data: { articles: [] } }
+        ]);
+
+        const searchArticles = searchRes.data.articles || [];
+        const categoryArticles = categoryRes.data.articles || [];
+
+        // 2. Combine: Search results > Category results
+        const combined = [...searchArticles, ...categoryArticles];
+        
+        // 3. Deduplicate and filter out current article
+        const unique = [];
+        const seen = new Set();
+        seen.add(currentId); // Exclude current
+
+        for (const item of combined) {
+            if (!seen.has(item._id)) {
+                seen.add(item._id);
+                unique.push(item);
+            }
+        }
+        
+        // 4. Prioritize images within the relevant set
+        // (Optional: stick to relevance order (Search -> Category), but prefer images if relevance is equal? 
+        //  The user said "really related", so let's stick to the Relevance Order (Search Matches first).
+        //  We will just take top 3 unique relevant ones.)
+        
+        return unique.slice(0, 3);
+
+    } catch (error) {
+        console.error("Failed to fetch related", error);
+        return [];
+    }
 };
 
 const ArticleDetail = () => {
@@ -27,9 +75,9 @@ const ArticleDetail = () => {
   });
 
   const { data: relatedArticles } = useQuery({
-    queryKey: ['related', id],
-    queryFn: () => fetchRelatedArticles(id),
-    enabled: !!article // Only fetch after main article loads
+    queryKey: ['related', id, article?.title], // Refetch if title loads
+    queryFn: () => fetchRelatedArticles(id, article),
+    enabled: !!article 
   });
 
   if (isLoading) {
@@ -183,12 +231,16 @@ const ArticleDetail = () => {
                    <div className="flex flex-col gap-6">
                        {relatedArticles?.map(related => (
                            <Link key={related._id} to={`/articles/${related._id}`} className="group block">
-                                <div className="mb-3 h-32 w-full overflow-hidden rounded-xl bg-gray-800">
-                                   {related.imageUrl && (
+                                <div className="mb-3 h-32 w-full overflow-hidden rounded-xl border border-white/10 bg-gray-900">
+                                   {related.imageUrl ? (
                                        <div 
                                             className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                                             style={{ backgroundImage: `url(${related.imageUrl})` }}
                                        />
+                                   ) : (
+                                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-white/5 to-white/10 transition-transform duration-500 group-hover:scale-110">
+                                            <Tag className="h-8 w-8 text-white/20" />
+                                       </div>
                                    )}
                                 </div>
                                 <h4 className="mb-2 font-bold text-white transition-colors group-hover:text-primary">
